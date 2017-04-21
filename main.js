@@ -1,7 +1,5 @@
-$(function(){
 
-alert("1st part")
-})
+/*
     $.get("/ping", function(data){
         if(data.error == "true"){
             $("#results").prepend("<div class='alert alert-danger'><strong>Error!</strong> "+ data.message +"</div>");
@@ -12,10 +10,14 @@ alert("1st part")
       alert("it worked!")
       submitData();
     });
+*/
+
+$(function(){
 
 
-    function submitData(){
-      $.post("/submitData1", {username: $("#username").val(), password: $("#password").val()})
+$('.submitnewuser').submit(function () {
+		alert("Form Submitted")
+      $.post("/createnewuser", {username: $("#username").val(), password: $("#password").val()})
         //.done(function(data){
           /*if(data.result == "failed"){
             console.log(data)
@@ -26,6 +28,6 @@ alert("1st part")
           }
           */
         //};
-    }
-
+    });
+})
 

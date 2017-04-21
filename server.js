@@ -21,25 +21,40 @@ function getPass() {
 function connectToDb() {
 	
 	console.log("connecting...")
-  var connection = mysql.createConnection({
+  var db_config = ({
     user: 'bf229b15bc2a3e',
     password: '478b8184',
     host: 'us-cdbr-iron-east-03.cleardb.net',
     database: 'heroku_155a5011faf681f',
   });
   
+  var connection;
   
-  connection.connect();
-  
-  connection.query("INSERT into Users (username, password) VALUES ('bingus', 'connected');", function(err, rows, fields) {
-      if (err) {
-        console.log('error: ', err);
-        throw err;
-      }
-     // response.send(['Hello World!!!! HOLA MUNDO!!!!', rows]);
-    });
-  
-  
+  //copeied from http://stackoverflow.com/questions/20210522/nodejs-mysql-error-connection-lost-the-server-closed-the-connection
+ function handleDisconnect() {
+  connection = mysql.createConnection(db_config); // Recreate the connection, since
+                                                  // the old one cannot be reused.
+
+  connection.connect(function(err) {              // The server is either down
+    if(err) {                                     // or restarting (takes a while sometimes).
+      console.log('error when connecting to db:', err);
+      setTimeout(handleDisconnect, 2000); // We introduce a delay before attempting to reconnect,
+    }                                     // to avoid a hot loop, and to allow our node script to
+  });                                     // process asynchronous requests in the meantime.
+                                          // If you're also serving http, display a 503 error.
+  connection.on('error', function(err) {
+    console.log('db error', err);
+    if(err.code === 'PROTOCOL_CONNECTION_LOST') { // Connection to the MySQL server is usually
+      handleDisconnect();                         // lost due to either server restart, or a
+    } else {                                      // connnection idle timeout (the wait_timeout
+      throw err;                                  // server variable configures this)
+    }
+  });
+}
+
+handleDisconnect();
+//end copied code
+
   return connection;
 	/*
 	
@@ -74,33 +89,6 @@ function displayAllPlayers() {
 
 // This will update the player level
 // Takes player first name, last name, email, and level
-function updatePlayerLevel(data) {
-    var fName = data.fname;
-    var lName = data.lname;
-    var email = data.email;
-    var level = data.level;
-
-    if (!fName || !lName || !email || !level)
-    {      
-        console.log('Error: [updatePlayerLevel] Missing fname, lname, email, or level');
-        return null;
-    }
-    return new sql.Request().query("UPDATE Player SET levelID = " + level + " WHERE fName='" + fName + "' AND lName='" + lName + "' AND email='" + email + "'");
-}
-
-function deletePlayer(data) {
-    var fName = data.fname;
-    var lName = data.lname;
-    var email = data.email;
-
-    if (!fName || !lName || !email)
-    {      
-        console.log('Error: [deletePlayer] Missing fname, lname, or email');
-        return null;
-    }
-
-    return new sql.Request().query("DELETE FROM Player WHERE fName='" + fName + "' AND lName='" + lName + "' AND email='" + email + "'");
-}
 
 
 function insertPlayer(data) {
@@ -151,7 +139,7 @@ Console.log("Database updated.");
     
 
 //ROUTES
-function makeRouter() {
+function makeRouter(connection) {
     app.use(cors())  
     console.log("Creating routes");
     // frames
@@ -173,16 +161,32 @@ function makeRouter() {
 			res.redirect('/')
 		})
   })
+  
+  app.post('/createnewuser', function(req, res) {
+	connection.query("INSERT into Users (username, password) VALUES ('" + req.body.username + "', '" + req.body.password + "');", function(err, rows, fields) {
+      if (err) {
+        console.log('error: ', err);
+        throw err;
+      }
+	  res.send('Created user: ' + req.body.username + ' successfully.');
+     // response.send(['Hello World!!!! HOLA MUNDO!!!!', rows]);
+    });
+	
+});
  
 }
+
+
+
+
 
 
 
 function startParty() {
 
 console.log("Connecting to guru_db");
- connectToDb();
- makeRouter();
+ var connection = connectToDb();
+ makeRouter(connection);
 }
 
 startParty();
