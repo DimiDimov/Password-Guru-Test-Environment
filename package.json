@@ -14,8 +14,11 @@
   "dependencies": {
     "body-parser": "^1.17.1",
     "cors": "^2.7.1",
+    "crypto": "0.0.3",
+    "csprng": "^0.1.2",
     "express": "^4.13.4",
     "mysql": "^2.13.0",
-    "path": "^0.12.7"
+    "path": "^0.12.7",
+    "promises": "^0.2.5"
   }
 }
